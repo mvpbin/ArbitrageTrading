@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
+from tensorflow.keras.metrics import MeanAbsoluteError, MeanSquaredError
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 import ta  # 引入ta库以计算技术指标
@@ -48,7 +49,8 @@ def build_model(input_shape):
         tf.keras.layers.Dense(64, activation='relu'),
         tf.keras.layers.Dense(1)
     ])
-    model.compile(optimizer='adam', loss='mean_squared_error', metrics=['mae'])
+    # 添加MeanAbsoluteError和MeanSquaredError作为指标
+    model.compile(optimizer='adam', loss='mean_squared_error', metrics=[MeanAbsoluteError(), MeanSquaredError()])
     return model
 
 # 训练模型并进行预测
@@ -76,7 +78,13 @@ def train_predict_model(data, retrain=False):
 
     model.save(model_path)
 
+    # 模型预测
     predict_x = X_test.iloc[-1:].values
     prediction = model.predict(predict_x)[0][0]
+
+    # 评估模型性能
+    evaluation = model.evaluate(X_test, y_test, verbose=2)
+    logging.info(f"模型评估结果: {evaluation}")
+    logging.info(f"Mean Absolute Error (MAE): {evaluation[1]}, Mean Squared Error (MSE): {evaluation[2]}")
 
     return prediction
